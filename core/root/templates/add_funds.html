@@ -1,0 +1,9 @@
+<h2>Maqsad: {{ goal.goal_amount }} so‘m</h2>
+<h3>Hozircha yig‘ilgan: {{ goal.current_amount }} so‘m</h3>
+
+<form method="post">
+    {% csrf_token %}
+    <label>Qo‘shmoqchi bo‘lgan summani kiriting:</label>
+    <input type="number" name="amount" required>
+    <button type="submit">Qo‘shish</button>
+</form>

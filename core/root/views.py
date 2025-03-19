@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.conf import settings
+from .models import SavingsGoal
+from decimal import Decimal
 import random
 
 
@@ -46,3 +49,39 @@ def verify_code(request, email):
             return render(request, "verify_code.html", {"email": email, "error": "Kod noto‘g‘ri!"})
 
     return render(request, "verify_code.html", {"email": email})
+
+@login_required
+def set_goal(request):
+    if request.method == "POST":
+        goal_amount = request.POST.get("goal_amount")
+        SavingsGoal.objects.update_or_create(
+            user=request.user,
+            defaults={"goal_amount": goal_amount, "current_amount": 0},
+        )
+        return redirect("add_funds")
+
+    return render(request, "set_goal.html")
+
+@login_required
+def add_funds(request):
+    goal = SavingsGoal.objects.filter(user=request.user).first()
+
+    if request.method == "POST":
+        amount = request.POST.get("amount")
+
+        if goal:
+            goal.current_amount += Decimal(amount)
+            goal.save()
+
+            if goal.is_goal_reached():
+                send_mail(
+                    "Maqsadga yetdingiz!",
+                    f"Tabriklaymiz! Siz belgilangan {goal.goal_amount} summani yig‘dingiz!",
+                    settings.EMAIL_HOST_USER,
+                    [request.user.email],
+                    fail_silently=False,
+                )
+
+        return redirect("add_funds")
+
+    return render(request, "add_funds.html", {"goal": goal})
