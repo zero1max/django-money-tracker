@@ -1,0 +1,15 @@
+<form method="post">
+    {% csrf_token %}
+    <p>{{ email }} email manzilingizga tasdiqlash kodi yuborildi.</p>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <input type="text" name="code" placeholder="Tasdiqlash kodi" required><br>
+    <button type="submit">Tasdiqlash</button>
+</form>
+
+{% if success %}
+    <script>
+        window.location.href = "{% url 'success' %}";
+    </script>
+{% endif %}
