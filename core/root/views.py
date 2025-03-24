@@ -11,6 +11,7 @@ import random
 
 verification_codes = {}
 
+
 def register(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -31,6 +32,7 @@ def register(request):
     
     return render(request, "register.html")
 
+
 def verify_code(request, email):
     if request.method == "POST":
         entered_code = request.POST.get("code")
@@ -50,6 +52,7 @@ def verify_code(request, email):
 
     return render(request, "verify_code.html", {"email": email})
 
+
 @login_required
 def set_goal(request):
     if request.method == "POST":
@@ -61,6 +64,7 @@ def set_goal(request):
         return redirect("add_funds")
 
     return render(request, "set_goal.html")
+
 
 @login_required
 def add_funds(request):
