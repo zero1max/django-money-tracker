@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
+from django.http import JsonResponse
 from .models import SavingsGoal
 from decimal import Decimal
 import random
@@ -11,6 +12,15 @@ import random
 
 verification_codes = {}
 
+@login_required
+def home(request):
+    user = request.user
+    goals = SavingsGoal.objects.filter(user=user)
+
+    # Barcha yig‘ilgan pullarning umumiy qiymatini hisoblash
+    total_savings = sum(goal.current_amount for goal in goals)
+
+    return render(request, "home.html", {"user": user, "goals": goals, "total_savings": total_savings})
 
 def register(request):
     if request.method == "POST":
@@ -57,14 +67,14 @@ def user_login(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-
-        user = authenticate(request, username=email, password=password)
+        
+        user = authenticate(username=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect("set_goal")  
+            return redirect("home")  # ✅ Tizimga kirgandan so‘ng, home sahifasiga o'tkazamiz
         else:
             return render(request, "login.html", {"error": "Email yoki parol noto‘g‘ri!"})
-
+    
     return render(request, "login.html")
 
 
@@ -106,7 +116,9 @@ def add_funds(request):
                     [request.user.email],
                     fail_silently=False,
                 )
+                
+                return JsonResponse({"goal_reached": True})  # JavaScriptga signal berish
 
-        return redirect("add_funds")
+        return JsonResponse({"goal_reached": False})
 
     return render(request, "add_funds.html", {"goal": goal})
