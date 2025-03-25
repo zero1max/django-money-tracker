@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
 from .models import SavingsGoal
 from decimal import Decimal
@@ -51,6 +51,27 @@ def verify_code(request, email):
             return render(request, "verify_code.html", {"email": email, "error": "Kod noto‘g‘ri!"})
 
     return render(request, "verify_code.html", {"email": email})
+
+
+def user_login(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect("set_goal")  
+        else:
+            return render(request, "login.html", {"error": "Email yoki parol noto‘g‘ri!"})
+
+    return render(request, "login.html")
+
+
+@login_required
+def user_logout(request):
+    logout(request)
+    return redirect("login")
 
 
 @login_required
