@@ -1,15 +1,34 @@
-<form method="post">
-    {% csrf_token %}
-    <p>{{ email }} email manzilingizga tasdiqlash kodi yuborildi.</p>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    <input type="text" name="code" placeholder="Tasdiqlash kodi" required><br>
-    <button type="submit">Tasdiqlash</button>
-</form>
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Email tasdiqlash</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="card shadow p-4 mx-auto" style="max-width: 400px;">
+            <h2 class="text-center">Email Tasdiqlash</h2>
+            <p class="text-center">{{ email }} email manzilingizga tasdiqlash kodi yuborildi.</p>
+            {% if error %}
+                <p class="text-danger text-center">{{ error }}</p>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <input type="text" name="code" class="form-control" placeholder="Tasdiqlash kodi" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Tasdiqlash</button>
+            </form>
+        </div>
+    </div>
 
-{% if success %}
-    <script>
-        window.location.href = "{% url 'success' %}";
-    </script>
-{% endif %}
+    {% if success %}
+        <script>
+            window.location.href = "{% url 'success' %}";
+        </script>
+    {% endif %}
+</body>
+</html>

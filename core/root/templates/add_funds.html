@@ -1,9 +1,26 @@
-<h2>Maqsad: {{ goal.goal_amount }} so‘m</h2>
-<h3>Hozircha yig‘ilgan: {{ goal.current_amount }} so‘m</h3>
-
-<form method="post">
-    {% csrf_token %}
-    <label>Qo‘shmoqchi bo‘lgan summani kiriting:</label>
-    <input type="number" name="amount" required>
-    <button type="submit">Qo‘shish</button>
-</form>
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mablag‘ qo‘shish</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="card shadow p-4">
+            <h2 class="text-center">Maqsad: {{ goal.goal_amount }} so‘m</h2>
+            <h3 class="text-center text-success">Hozircha yig‘ilgan: {{ goal.current_amount }} so‘m</h3>
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Qo‘shmoqchi bo‘lgan summani kiriting:</label>
+                    <input type="number" name="amount" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Qo‘shish</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
