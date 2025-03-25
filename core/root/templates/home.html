@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="card shadow p-4 mx-auto text-center" style="max-width: 500px;">
+            <h2 class="text-primary">Xush kelibsiz, {{ user.email }}!</h2>
+            
+            <div class="my-3">
+                <strong>Email:</strong> {{ user.email }}
+            </div>
+
+            <h4 class="text-dark mt-4">Sizning maqsadlaringiz:</h4>
+
+            {% for goal in goals %}
+                <div class="border p-3 mb-2 {% if goal.is_goal_reached %} bg-success text-white {% else %} bg-light {% endif %}">
+                    <strong>{{ goal.goal_amount }} so‘m</strong> - 
+                    {% if goal.is_goal_reached %}
+                        <span>Siz bu maqsadga erishgansiz! ✅</span>
+                    {% else %}
+                        <span>Hozirgacha yig‘ilgan: {{ goal.current_amount }} so‘m</span>
+                        <a href="{% url 'add_funds' %}" class="btn btn-sm btn-primary">+</a>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p>Siz hali maqsad qo‘ymadingiz.</p>
+            {% endfor %}
+
+            <hr>
+            <h5 class="text-info">Sizning shu paytgacha bo‘lgan barcha yig‘imlaringiz: {{ total_savings }} so‘m</h5>
+
+            <a href="{% url 'set_goal' %}" class="btn btn-success w-100 my-2">Yangi maqsad qo‘shish</a>
+            <a href="{% url 'logout' %}" class="btn btn-danger w-100">Chiqish</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -6,21 +6,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mablag‘ qo‘shish</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="bg-light">
     <div class="container py-5">
-        <div class="card shadow p-4">
+        <div class="card shadow p-4 mx-auto" style="max-width: 400px;">
             <h2 class="text-center">Maqsad: {{ goal.goal_amount }} so‘m</h2>
-            <h3 class="text-center text-success">Hozircha yig‘ilgan: {{ goal.current_amount }} so‘m</h3>
-            <form method="post" class="mt-4">
+            <h3 class="text-center">Hozircha yig‘ilgan: {{ goal.current_amount }} so‘m</h3>
+
+            <form id="fundForm" method="post">
                 {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label">Qo‘shmoqchi bo‘lgan summani kiriting:</label>
-                    <input type="number" name="amount" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Qo‘shish</button>
+                <label>Qo‘shmoqchi bo‘lgan summani kiriting:</label>
+                <input type="number" name="amount" class="form-control" required>
+                <button type="submit" class="btn btn-primary mt-3 w-100">Qo‘shish</button>
+                <a href="{% url 'home' %}" class="btn btn-secondary w-100 mt-3">Asosiy sahifaga qaytish</a>
             </form>
         </div>
     </div>
+
+    <!-- Tabriklash oynasi -->
+    <div id="goalModal" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-success">Tabriklaymiz!</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>Siz o‘z maqsadingizga yetdingiz! 🎉</p>
+                    <a href="{% url 'set_goal' %}" class="btn btn-success">Yangi maqsad qo‘shish</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $("#fundForm").submit(function(event) {
+                event.preventDefault();
+                
+                $.post("{% url 'add_funds' %}", $(this).serialize(), function(data) {
+                    if (data.goal_reached) {
+                        $("#goalModal").modal("show");
+                    } else {
+                        location.reload(); 
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
