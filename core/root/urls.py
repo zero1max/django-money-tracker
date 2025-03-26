@@ -1,6 +1,6 @@
 from django.urls import path
 from django.shortcuts import render
-from .views import home, register, verify_code, set_goal, add_funds, user_login, user_logout, 
+from .views import home, register, verify_code, set_goal, add_funds, user_login, user_logout
 
 urlpatterns = [
     path("", user_login, name="login"),
