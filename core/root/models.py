@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 #
 from .managers import UserManager
 
+
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE = (
         ('User', 'user'),
