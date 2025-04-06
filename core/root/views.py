@@ -15,12 +15,14 @@ verification_codes = {}
 @login_required
 def home(request):
     user = request.user
-    goals = SavingsGoal.objects.filter(user=user)
-
-    # Barcha yig‘ilgan pullarning umumiy qiymatini hisoblash
+    goals = SavingsGoal.objects.filter(user=user).order_by("-date_created")
     total_savings = sum(goal.current_amount for goal in goals)
 
-    return render(request, "home.html", {"user": user, "goals": goals, "total_savings": total_savings})
+    return render(request, "home.html", {
+        "user": user,
+        "goals": goals,
+        "total_savings": total_savings
+    })
 
 def register(request):
     if request.method == "POST":
@@ -88,9 +90,10 @@ def user_logout(request):
 def set_goal(request):
     if request.method == "POST":
         goal_amount = request.POST.get("goal_amount")
-        SavingsGoal.objects.update_or_create(
+        goal = SavingsGoal.objects.create(
             user=request.user,
-            defaults={"goal_amount": goal_amount, "current_amount": 0},
+            goal_amount=goal_amount,
+            current_amount=0,
         )
         return redirect("add_funds")
 
@@ -99,26 +102,27 @@ def set_goal(request):
 
 @login_required
 def add_funds(request):
-    goal = SavingsGoal.objects.filter(user=request.user).first()
+    goal = SavingsGoal.objects.filter(user=request.user, is_completed=False).order_by("-date_created").first()
 
     if request.method == "POST":
         amount = request.POST.get("amount")
 
         if goal:
             goal.current_amount += Decimal(amount)
-            goal.save()
-
             if goal.is_goal_reached():
+                goal.is_completed = True
+                goal.save()
+
                 send_mail(
                     "Maqsadga yetdingiz!",
-                    f"Tabriklaymiz! Siz belgilangan {goal.goal_amount} summani yig‘dingiz!",
+                    f"Tabriklaymiz! Siz {goal.goal_amount} summani yig‘dingiz!",
                     settings.EMAIL_HOST_USER,
                     [request.user.email],
                     fail_silently=False,
                 )
-                
-                return JsonResponse({"goal_reached": True})  # JavaScriptga signal berish
+                return JsonResponse({"goal_reached": True})
 
-        return JsonResponse({"goal_reached": False})
+            goal.save()
+            return JsonResponse({"goal_reached": False})
 
     return render(request, "add_funds.html", {"goal": goal})
