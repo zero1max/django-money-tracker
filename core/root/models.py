@@ -27,8 +27,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     class Meta:
-        verbose_name = _('user')
-        verbose_name_plural = _('users')
+        verbose_name = _('User')
+        verbose_name_plural = _('Users')
 
     def get_full_name(self):
         '''
@@ -50,12 +50,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
-
 class SavingsGoal(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    goal_amount = models.DecimalField(max_digits=10, decimal_places=2)  
-    current_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0) 
-    all_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='goals')
+    goal_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    current_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    date_created = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False)
+    
 
     def is_goal_reached(self):
         return self.current_amount >= self.goal_amount
