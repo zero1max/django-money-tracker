@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
 from django.http import JsonResponse
-from .models import SavingsGoal
+from .models import SavingsGoal, User
 from decimal import Decimal
 import random
 
