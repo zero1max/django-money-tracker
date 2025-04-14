@@ -3,12 +3,10 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
 from decimal import Decimal
-from .models import SavingsGoal  # O'z model faylingizga moslashtiring
+from .models import SavingsGoal  
 
-# Faol User modelini olish
 User = get_user_model()
 
-# pytest uchun fixture'lar
 @pytest.fixture
 def client():
     from django.test import Client
