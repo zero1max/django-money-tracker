@@ -1,86 +1,104 @@
-from django.test import TestCase, Client
+import pytest
 from django.urls import reverse
-from django.contrib.auth.models import User
-from .models import SavingsGoal
+from django.contrib.auth import get_user_model
+from django.core import mail
 from decimal import Decimal
+from .models import SavingsGoal  # O'z model faylingizga moslashtiring
 
-class AppTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.email = "testuser@example.com"
-        self.password = "securepassword123"
+# Faol User modelini olish
+User = get_user_model()
 
-        # ✅ TO‘G‘RI Foydalanuvchi yaratish
-        self.user = User.objects.create_user(username=self.email, email=self.email, password=self.password)
+# pytest uchun fixture'lar
+@pytest.fixture
+def client():
+    from django.test import Client
+    return Client()
 
+@pytest.fixture
+def user(db):
+    email = "testuser@example.com"
+    password = "securepassword123"
+    return User.objects.create_user(username=email, email=email, password=password)
 
-    def test_login_success(self):
-        response = self.client.post(reverse("login"), {
-            "email": self.email,
-            "password": self.password
-        })
-        
-        self.assertRedirects(response, reverse("home"))
+@pytest.mark.django_db
+def test_login_success(client, user):
+    email = "testuser@example.com"
+    password = "securepassword123"
+    
+    response = client.post(reverse("login"), {
+        "email": email,
+        "password": password
+    })
+    
+    assert response.status_code == 302  # Redirect
+    assert response.url == reverse("home")
+    
+    user_db = User.objects.get(email=email)
+    assert user_db.email == email
 
-        # ✅ `email` orqali emas, `User` modelidan olish
-        user = User.objects.get(email=self.email)
-        self.assertEqual(user.email, self.email)
+@pytest.mark.django_db
+def test_login_failure(client, user):
+    response = client.post(reverse("login"), {
+        "email": "testuser@example.com",
+        "password": "wrongpassword"
+    })
+    
+    assert "Email yoki parol noto‘g‘ri!" in response.content.decode()
 
+@pytest.mark.django_db
+def test_logout(client, user):
+    client.login(username=user.email, password="securepassword123")
+    response = client.get(reverse("logout"))
+    
+    assert response.status_code == 302
+    assert response.url == reverse("login")
 
-    def test_login_failure(self):
-        response = self.client.post(reverse("login"), {
-            "email": self.email,
-            "password": "wrongpassword"
-        })
-        self.assertContains(response, "Email yoki parol noto‘g‘ri!")
+@pytest.mark.django_db
+def test_home_authenticated(client, user):
+    client.login(username=user.email, password="securepassword123")
+    response = client.get(reverse("home"))
+    
+    assert response.status_code == 200
+    assert "home.html" in [t.name for t in response.templates]
 
-    def test_logout(self):
-        self.client.login(username=self.email, password=self.password)
-        response = self.client.get(reverse("logout"))
-        self.assertRedirects(response, reverse("login"))
+@pytest.mark.django_db
+def test_set_goal(client, user):
+    client.login(username=user.email, password="securepassword123")
+    
+    response = client.post(reverse("set_goal"), {
+        "goal_amount": "1000"
+    })
+    
+    assert response.status_code == 302
+    assert response.url == reverse("add_funds")
+    
+    goal = SavingsGoal.objects.get(user=user)
+    assert goal.goal_amount == Decimal("1000.00")
+    assert goal.current_amount == Decimal("0.00")
 
-    def test_home_authenticated(self):
-        self.client.login(username=self.email, password=self.password)
-        response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "home.html")
+@pytest.mark.django_db
+def test_add_funds_and_goal_reached(client, user):
+    client.login(username=user.email, password="securepassword123")
+    
+    goal = SavingsGoal.objects.create(user=user, goal_amount=Decimal("500"), current_amount=Decimal("450"))
+    
+    response = client.post(reverse("add_funds"), {
+        "amount": "50"
+    })
+    
+    goal.refresh_from_db()
+    
+    assert goal.current_amount == Decimal("500")
+    assert response.json() == {"goal_reached": True}
 
-    def test_set_goal(self):
-        self.client.login(username=self.email, password=self.password)
-        
-        response = self.client.post(reverse("set_goal"), {
-            "goal_amount": "1000"
-        })
-        
-        self.assertRedirects(response, reverse("add_funds"))
-
-        # ✅ `email` o‘rniga `self.user` ishlatamiz
-        goal = SavingsGoal.objects.get(user=self.user)
-        
-        self.assertEqual(goal.goal_amount, Decimal("1000.00"))
-        self.assertEqual(goal.current_amount, Decimal("0.00"))
-
-
-    def test_add_funds_and_goal_reached(self):
-        self.client.login(username=self.email, password=self.password)
-        
-        # ✅ `user=self.email` EMAS, balki `user=self.user` bo‘lishi kerak
-        goal = SavingsGoal.objects.create(user=self.user, goal_amount=Decimal("500"), current_amount=Decimal("450"))
-        
-        response = self.client.post(reverse("add_funds"), {
-            "amount": "50"
-        })
-        
-        goal.refresh_from_db()  # Ma'lumotlar bazasini yangilash
-        
-        self.assertEqual(goal.current_amount, Decimal("500"))
-        self.assertJSONEqual(response.content, {"goal_reached": True})
-
-
-    def test_register_sends_code(self):
-        with self.settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend'):
-            response = self.client.post(reverse("register"), {
-                "email": "newuser@example.com",
-                "password": "test1234"
-            })
-            self.assertRedirects(response, reverse("verify_code", kwargs={"email": "newuser@example.com"}))
+@pytest.mark.django_db
+def test_register_sends_code(client, settings):
+    settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    
+    response = client.post(reverse("register"), {
+        "email": "newuser@example.com",
+        "password": "test1234"
+    })
+    
+    assert response.status_code == 302
+    assert response.url == reverse("verify_code", kwargs={"email": "newuser@example.com"})
